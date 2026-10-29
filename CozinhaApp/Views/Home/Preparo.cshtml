@@ -1,0 +1,92 @@
+@model Preparo
+@{
+    ViewData["Title"] = Model.Receita.Nome;
+    var etapas = Model.Receita.Etapas.OrderBy(e => e.Ordem).ToList();
+    var total = etapas.Count;
+    var emAndamento = Model.Status == StatusPreparo.EmAndamento;
+    var resumo = etapas.SelectMany(e => e.Ingredientes)
+        .GroupBy(i => i.IngredienteId)
+        .Select(g => new { Ing = g.First().Ingrediente, Qtd = g.Sum(x => x.Quantidade) })
+        .OrderBy(x => x.Ing.Nome).ToList();
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div>
+        <a asp-action="Index" class="small">Voltar para os pratos em produção</a>
+        <h1 class="h3 m-0 mt-1">@Model.Receita.Nome</h1>
+        <div class="text-muted">Pedido #@Model.Id, iniciado às @Formato.DataHora(Model.Inicio)</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary" asp-controller="Receitas" asp-action="Index">Pratos e receitas</a>
+        <a class="btn btn-success" asp-controller="Ingredientes" asp-action="Index">Ingredientes</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="panel">
+            <h2 class="h5 mb-3">Passo a passo</h2>
+            @foreach (var etapa in etapas)
+            {
+                var estado = !emAndamento ? "" : etapa.Ordem < Model.EtapaAtual ? "done" : etapa.Ordem == Model.EtapaAtual ? "current" : "";
+                <div class="step @estado">
+                    <div class="step-title">Etapa @etapa.Ordem
+                        @if (estado == "done") { <span class="badge bg-success ms-1">Concluída</span> }
+                        @if (estado == "current") { <span class="badge bg-warning text-dark ms-1">Em andamento</span> }
+                    </div>
+                    <div class="mb-2">@etapa.Descricao</div>
+                    @foreach (var i in etapa.Ingredientes)
+                    {
+                        <span class="chip">@i.Ingrediente.Nome: @Formato.Quantidade(i.Quantidade, i.Ingrediente.Medida)</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel mb-4">
+            <h2 class="h5 mb-3">Ingredientes usados</h2>
+            <table class="table table-sm mb-0">
+                <tbody>
+                @foreach (var r in resumo)
+                {
+                    <tr><td>@r.Ing.Nome</td><td class="text-end">@Formato.Quantidade(r.Qtd, r.Ing.Medida)</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (emAndamento)
+        {
+            <div class="panel">
+                <h2 class="h5 mb-3">Andamento</h2>
+                @if (Model.EtapaAtual < total)
+                {
+                    <form asp-action="Avancar" asp-route-id="@Model.Id" method="post" class="mb-3">
+                        <button class="btn btn-primary w-100">
+                            @(Model.EtapaAtual == 0 ? "Iniciar etapa 1" : $"Concluir etapa {Model.EtapaAtual} e iniciar etapa {Model.EtapaAtual + 1}")
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="Finalizar" asp-route-id="@Model.Id" method="post" class="mb-3">
+                        <button class="btn btn-success w-100">Finalizar prato</button>
+                    </form>
+                }
+
+                <hr />
+                <p class="small text-muted">@ViewBag.InfoCancelamento</p>
+                <form asp-action="Cancelar" asp-route-id="@Model.Id" method="post"
+                      onsubmit="return confirm('Cancelar este preparo? @(ViewBag.InfoCancelamento)');">
+                    <button class="btn btn-outline-danger w-100">Cancelar preparo</button>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-secondary">Este preparo foi @(Model.Status == StatusPreparo.Finalizado ? "finalizado" : "cancelado").</div>
+        }
+    </div>
+</div>

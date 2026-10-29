@@ -1,0 +1,41 @@
+@model EstoqueFormViewModel
+@{ ViewData["Title"] = "Adicionar ao estoque"; }
+
+<a asp-action="Index" class="small">Voltar para os ingredientes</a>
+<h1 class="h3 mt-1 mb-4">Adicionar ao estoque</h1>
+
+<form asp-action="Create" method="post" class="panel" style="max-width:640px">
+    <div asp-validation-summary="All" class="alert alert-danger" style="@(ViewData.ModelState.IsValid ? "display:none" : "")"></div>
+
+    <div class="mb-3">
+        <label class="form-label" asp-for="Nome">Ingrediente</label>
+        <input class="form-control" asp-for="Nome" list="nomes" maxlength="100" autocomplete="off" required />
+        <datalist id="nomes">
+            @foreach (var n in (List<string>)ViewBag.Nomes) { <option value="@n"></option> }
+        </datalist>
+        <div class="form-text">Se o nome já existe, a quantidade entra como um novo lote com a validade informada.</div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-6">
+            <label class="form-label" asp-for="Quantidade">Quantidade</label>
+            <input class="form-control" asp-for="Quantidade" type="number" step="any" min="0.001" required />
+        </div>
+        <div class="col-6">
+            <label class="form-label" asp-for="Unidade">Unidade</label>
+            <select class="form-select" asp-for="Unidade">
+                <option value="@((int)UnidadeMedida.Grama)">Gramas (g)</option>
+                <option value="@((int)UnidadeMedida.Quilograma)">Quilogramas (kg)</option>
+                <option value="@((int)UnidadeMedida.Mililitro)">Mililitros (ml)</option>
+                <option value="@((int)UnidadeMedida.Litro)">Litros (L)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label" asp-for="Validade">Validade</label>
+        <input class="form-control" asp-for="Validade" type="date" required />
+    </div>
+
+    <button class="btn btn-success">Adicionar ao estoque</button>
+</form>

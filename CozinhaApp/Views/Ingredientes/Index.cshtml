@@ -1,0 +1,72 @@
+@model List<Ingrediente>
+@{ ViewData["Title"] = "Ingredientes"; }
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="h3 m-0">Ingredientes</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-success" asp-action="Create">Adicionar ao estoque</a>
+        <a class="btn btn-primary" asp-controller="Receitas" asp-action="Index">Pratos e receitas</a>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="panel">
+        <p class="mb-2"><strong>O estoque está vazio.</strong></p>
+        <p class="text-muted mb-3">Informe o ingrediente, a quantidade (g, kg, ml ou L) e a validade.</p>
+        <a class="btn btn-success" asp-action="Create">Adicionar ingrediente</a>
+    </div>
+}
+
+@foreach (var ing in Model)
+{
+    <div class="panel mb-3">
+        <div class="d-flex justify-content-between align-items-baseline mb-2">
+            <h2 class="h5 m-0">@ing.Nome</h2>
+            <div>Disponível para uso: <strong>@Formato.Quantidade(ing.EstoqueUtilizavel, ing.Medida)</strong></div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Quantidade atual</th><th>Validade</th><th>Situação</th><th class="text-end">Ação</th></tr></thead>
+                <tbody>
+                @foreach (var lote in ing.Lotes)
+                {
+                    <tr class="@(lote.Bloqueado ? "lote-bloqueado" : lote.Vencido ? "lote-vencido" : "")">
+                        <td>@Formato.Quantidade(lote.QuantidadeAtual, ing.Medida)
+                            <span class="text-muted small">de @Formato.Quantidade(lote.QuantidadeInicial, ing.Medida)</span></td>
+                        <td>@Formato.Data(lote.Validade)</td>
+                        <td>
+                            @if (lote.Bloqueado)
+                            {
+                                <span class="badge bg-danger">Bloqueado</span>
+                                <span class="small">@lote.MotivoBloqueio</span>
+                            }
+                            else if (lote.Vencido) { <span class="badge bg-secondary">Vencido</span> }
+                            else if (lote.QuantidadeAtual <= 0) { <span class="badge bg-secondary">Esgotado</span> }
+                            else { <span class="badge bg-success">Disponível</span> }
+                        </td>
+                        <td class="text-end">
+                            @if (lote.Bloqueado)
+                            {
+                                <form asp-action="Desbloquear" method="post" class="d-inline">
+                                    <input type="hidden" name="loteId" value="@lote.Id" />
+                                    <button class="btn btn-sm btn-outline-primary">Liberar</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="Bloquear" method="post" class="d-inline-flex gap-1 justify-content-end">
+                                    <input type="hidden" name="loteId" value="@lote.Id" />
+                                    <input name="motivo" class="form-control form-control-sm" style="max-width:200px"
+                                           placeholder="Motivo (ex.: intoxicação)" maxlength="200" aria-label="Motivo do bloqueio" />
+                                    <button class="btn btn-sm btn-outline-danger">Bloquear</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

@@ -1,0 +1,44 @@
+@model List<ReceitaResumo>
+@{ ViewData["Title"] = "Pratos e receitas"; }
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="h3 m-0">Pratos e receitas</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary" asp-action="Create">Nova receita</a>
+        <a class="btn btn-success" asp-controller="Ingredientes" asp-action="Index">Ingredientes</a>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="panel">
+        <p class="mb-2"><strong>Você ainda não cadastrou nenhuma receita.</strong></p>
+        <p class="text-muted mb-3">Cadastre primeiro os ingredientes no estoque e depois monte a receita com as etapas.</p>
+        <a class="btn btn-primary" asp-action="Create">Cadastrar receita</a>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-6 col-xl-4">
+                <div class="panel h-100 d-flex flex-column">
+                    <h2 class="h5">@item.Receita.Nome</h2>
+                    @if (!string.IsNullOrWhiteSpace(item.Receita.Descricao))
+                    {
+                        <p class="text-muted small">@item.Receita.Descricao</p>
+                    }
+                    <div class="text-muted small mb-3">@item.Receita.Etapas.Count etapa(s)</div>
+                    <div class="mt-auto d-flex justify-content-between align-items-end">
+                        <div>
+                            <div class="portions @(item.Porcoes == 0 ? "zero" : "")">@item.Porcoes</div>
+                            <div class="small text-muted">unidade(s) com o estoque atual</div>
+                        </div>
+                        <a class="btn btn-primary" asp-action="Preparar" asp-route-id="@item.Receita.Id">Preparar</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

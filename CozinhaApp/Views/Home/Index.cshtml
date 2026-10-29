@@ -1,0 +1,37 @@
+@model List<Preparo>
+@{ ViewData["Title"] = "Pratos em produção"; }
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="h3 m-0">Pratos em produção</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary" asp-controller="Receitas" asp-action="Index">Pratos e receitas</a>
+        <a class="btn btn-success" asp-controller="Ingredientes" asp-action="Index">Ingredientes</a>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="panel">
+        <p class="mb-2"><strong>Nenhum prato em produção agora.</strong></p>
+        <p class="text-muted mb-3">Escolha uma receita e toque em “Preparar” para ele aparecer aqui.</p>
+        <a class="btn btn-primary" asp-controller="Receitas" asp-action="Index">Ver receitas</a>
+    </div>
+}
+else
+{
+    <div class="ticket-rail">
+        @foreach (var p in Model)
+        {
+            var total = p.Receita.Etapas.Count;
+            var pct = total == 0 ? 0 : p.EtapaAtual * 100 / total;
+            <a class="ticket" asp-action="Preparo" asp-route-id="@p.Id">
+                <div class="ticket-num">Pedido #@p.Id • @p.Inicio.ToString("HH:mm")</div>
+                <div class="ticket-name">@p.Receita.Nome</div>
+                <div class="small mb-2">
+                    @(p.EtapaAtual == 0 ? "Aguardando início" : $"Etapa {p.EtapaAtual} de {total}")
+                </div>
+                <div class="ticket-progress"><span style="width:@pct%"></span></div>
+            </a>
+        }
+    </div>
+}

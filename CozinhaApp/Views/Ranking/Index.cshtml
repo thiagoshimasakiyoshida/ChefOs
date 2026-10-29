@@ -1,0 +1,46 @@
+@model List<RankingItem>
+@{
+    ViewData["Title"] = "Mais preparados";
+    var periodos = (List<CozinhaApp.Strategies.IPeriodoStrategy>)ViewBag.Periodos;
+    var atual = (CozinhaApp.Strategies.IPeriodoStrategy)ViewBag.PeriodoAtual;
+    var inicio = (DateTime?)ViewBag.Inicio;
+    var max = Model.Any() ? Model.Max(m => m.Total) : 1;
+}
+
+<h1 class="h3 mb-3">Pratos mais preparados</h1>
+
+<div class="btn-group mb-3" role="group" aria-label="Período">
+    @foreach (var p in periodos)
+    {
+        <a class="btn @(p.Periodo == atual.Periodo ? "btn-primary" : "btn-outline-primary")"
+           asp-action="Index" asp-route-periodo="@p.Periodo">@p.Rotulo</a>
+    }
+</div>
+<p class="text-muted">
+    @(inicio.HasValue ? $"Pratos finalizados desde {Formato.Data(inicio.Value)}." : "Todos os pratos finalizados desde o início.")
+    Preparos cancelados não entram na conta.
+</p>
+
+@if (!Model.Any())
+{
+    <div class="panel">Nenhum prato foi finalizado neste período.</div>
+}
+else
+{
+    <div class="panel">
+        <table class="table align-middle mb-0">
+            <thead><tr><th style="width:3rem">#</th><th>Prato</th><th style="width:40%"></th><th class="text-end">Preparos</th></tr></thead>
+            <tbody>
+            @for (var i = 0; i < Model.Count; i++)
+            {
+                <tr>
+                    <td>@(i + 1)</td>
+                    <td>@Model[i].Prato</td>
+                    <td><div class="rank-bar" style="width:@(Model[i].Total * 100 / max)%"></div></td>
+                    <td class="text-end"><strong>@Model[i].Total</strong></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

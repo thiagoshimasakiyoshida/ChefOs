@@ -1,0 +1,61 @@
+@model ReceitaResumo
+@{
+    ViewData["Title"] = "Preparar " + Model.Receita.Nome;
+    var estoque = (Dictionary<int, decimal>)ViewBag.Estoque;
+    var etapas = Model.Receita.Etapas.OrderBy(e => e.Ordem).ToList();
+    var resumo = etapas.SelectMany(e => e.Ingredientes)
+        .GroupBy(i => i.IngredienteId)
+        .Select(g => new { Ing = g.First().Ingrediente, Precisa = g.Sum(x => x.Quantidade) })
+        .OrderBy(x => x.Ing.Nome).ToList();
+}
+
+<a asp-action="Index" class="small">Voltar para as receitas</a>
+<h1 class="h3 mt-1 mb-4">Preparar @Model.Receita.Nome</h1>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="panel">
+            <h2 class="h5 mb-3">Passo a passo</h2>
+            @foreach (var etapa in etapas)
+            {
+                <div class="step">
+                    <div class="step-title">Etapa @etapa.Ordem</div>
+                    <div class="mb-2">@etapa.Descricao</div>
+                    @foreach (var i in etapa.Ingredientes)
+                    {
+                        <span class="chip">@i.Ingrediente.Nome: @Formato.Quantidade(i.Quantidade, i.Ingrediente.Medida)</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="panel mb-4">
+            <h2 class="h5 mb-3">Ingredientes para 1 unidade</h2>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Ingrediente</th><th class="text-end">Precisa</th><th class="text-end">Disponível</th></tr></thead>
+                <tbody>
+                @foreach (var r in resumo)
+                {
+                    estoque.TryGetValue(r.Ing.Id, out var disp);
+                    <tr class="@(disp < r.Precisa ? "text-danger" : "")">
+                        <td>@r.Ing.Nome</td>
+                        <td class="text-end">@Formato.Quantidade(r.Precisa, r.Ing.Medida)</td>
+                        <td class="text-end">@Formato.Quantidade(disp, r.Ing.Medida)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <p class="mb-3">Dá para fazer <strong>@Model.Porcoes</strong> unidade(s) com o estoque atual.</p>
+            <form asp-action="Preparar" asp-route-id="@Model.Receita.Id" method="post">
+                <button class="btn btn-primary w-100" disabled="@(Model.Porcoes == 0)">Iniciar preparo</button>
+            </form>
+            @if (Model.Porcoes == 0)
+            {
+                <p class="small text-danger mt-2 mb-0">Falta estoque (ou o lote está bloqueado ou vencido). Veja os ingredientes em vermelho.</p>
+            }
+        </div>
+    </div>
+</div>
